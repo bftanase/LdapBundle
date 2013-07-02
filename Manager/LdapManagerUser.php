@@ -47,7 +47,6 @@ class LdapManagerUser implements LdapManagerUserInterface
                 throw $e;
             }
         }
-
         return $this;
     }
 
@@ -116,20 +115,22 @@ class LdapManagerUser implements LdapManagerUserInterface
             ? $this->params['user']['filter']
             : '';
 
-        $entries = $this->ldapConnection
-            ->search(array(
-                'base_dn' => $this->params['user']['base_dn'],
-                'filter' => sprintf('(&%s(%s=%s))',
+		$baseDn = $this->params['user']['base_dn'];	
+		$filter = sprintf('(&%s(%s=%s))',
                                     $filter,
                                     $this->params['user']['name_attribute'],
                                     $this->ldapConnection->escape($this->username)
-                )
+                );
+        $entries = $this->ldapConnection
+            ->search(array(
+                'base_dn' => $baseDn,
+                'filter' => $filter
             ));
 
         if ($entries['count'] > 1) {
             throw new \RuntimeException("This search can only return a single user");
         }
-
+		
         if ($entries['count'] == 0) {
             return false;
         }
@@ -156,20 +157,28 @@ class LdapManagerUser implements LdapManagerUserInterface
         $filter = isset($this->params['role']['filter'])
             ? $this->params['role']['filter']
             : '';
-
+		
+		$baseDn = $this->params['role']['base_dn'];
+		$filter = sprintf(
+					'(&%s(%s=%s))',
+					$filter,
+					$this->params['role']['user_attribute'],
+					$this->ldapConnection->escape($this->getUserId())
+				);
+		
+		$attrs = array(
+						$this->params['role']['name_attribute']
+					);
+		
         $entries = $this->ldapConnection
-            ->search(array(
-                'base_dn'  => $this->params['role']['base_dn'],
-                'filter'   => sprintf('(&%s(%s=%s))',
-                                      $filter,
-                                      $this->params['role']['user_attribute'],
-                                      $this->ldapConnection->escape($this->getUserId())
-                ),
-                'attrs'    => array(
-                    $this->params['role']['name_attribute']
-                )
+            ->search(
+				array(
+					'base_dn'  => $baseDn,
+					'filter'   => $filter,
+					'attrs'    => $attrs,
             ));
 
+//		var_dump($entries); exit;
         for ($i = 0; $i < $entries['count']; $i++) {
             array_push($tab, sprintf('ROLE_%s',
                                      self::slugify($entries[$i][$this->params['role']['name_attribute']][0])
@@ -189,8 +198,14 @@ class LdapManagerUser implements LdapManagerUserInterface
 
     private function bindByUsername()
     {
+		if ($this->params['client']['domain_name']) {
+			$username = $this->username.'@'.$this->params['client']['domain_name']; 
+		} else {
+			$username = $this->username;
+		}
+		
         return $this->ldapConnection
-            ->bind($this->username, $this->password);
+            ->bind($username, $this->password);
     }
 
     private static function slugify($role)
@@ -217,4 +232,9 @@ class LdapManagerUser implements LdapManagerUserInterface
                 throw new \Exception(sprintf("The value can't be retrieved for this user_id : %s",$this->params['role']['user_id']));
         }
     }
+	
+	public function getUser() 
+	{
+		return $this->ldapUser;
+	}
 }

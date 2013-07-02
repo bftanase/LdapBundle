@@ -41,7 +41,7 @@ class LdapConnection implements LdapConnectionInterface
                 print_r($params['filter'], true)
             ));
 
-        $search = @ldap_search(
+        $search = ldap_search(
             self::$ress,
             $params['base_dn'],
             $params['filter'],

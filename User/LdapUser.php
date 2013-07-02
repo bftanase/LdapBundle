@@ -9,7 +9,7 @@ class LdapUser implements UserInterface, EquatableInterface, \Serializable
 {
     protected $username,
         $email,
-        $roles,
+        $roles = array(),
         $dn,
         $attributes
         ;

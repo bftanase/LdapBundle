@@ -83,7 +83,6 @@ class LdapUserProvider implements UserProviderInterface
     {
         $ldapUser = new LdapUser();
         $ldapUser->setUsername($username);
-
         return $ldapUser;
     }
 
