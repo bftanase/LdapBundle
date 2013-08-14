@@ -62,6 +62,11 @@ class LdapAuthenticationProvider implements AuthenticationProviderInterface
      */
     public function authenticate(TokenInterface $token)
     {
+        $passwd = $token->getCredentials();
+        if (empty($passwd)) {
+            throw new BadCredentialsException('Bad credentials', 0);
+        }
+
         if (!$this->supports($token)) {
             throw new AuthenticationException('Unsupported token');
         }
@@ -82,7 +87,10 @@ class LdapAuthenticationProvider implements AuthenticationProviderInterface
                 $userEvent = new LdapUserEvent($user);
                 try {
                     $this->dispatcher->dispatch(LdapEvents::PRE_BIND, $userEvent);
+                } catch (\PDOException $ex) {
+                    throw $ex;
                 } catch (\Exception $expt) {
+
                     if ($this->hideUserNotFoundExceptions) {
                         throw new BadCredentialsException('Bad credentials', 0, $expt);
                     }

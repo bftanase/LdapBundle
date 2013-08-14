@@ -12,11 +12,12 @@ namespace IMAG\LdapBundle\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Security\Core\SecurityContext;
 
 class DefaultController extends Controller
 {
-    public function loginAction()
+    public function loginAction(Request $request)
     {
         $error = $this->getAuthenticationError();
 
@@ -33,7 +34,10 @@ class DefaultController extends Controller
             return $this->get('request')->attributes->get(SecurityContext::AUTHENTICATION_ERROR);
         }
 
-        return $this->get('request')->getSession()->get(SecurityContext::AUTHENTICATION_ERROR);
+        $error = $this->get('request')->getSession()->get(SecurityContext::AUTHENTICATION_ERROR);
+        // remove from session the error message (should display only once)
+        $this->get('request')->getSession()->set(SecurityContext::AUTHENTICATION_ERROR, '');
+        return $error;
     }
 
     private function generateToken()
